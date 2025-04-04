@@ -132,4 +132,16 @@ class ForumController extends Controller
             return response()->json(['error' => 'Error deleting post.'], 500);
         }
     }
+
+    public function destroy($id)
+    {
+        $comment = Comment::find($id);
+
+        if ($comment) {
+            $comment->delete();
+            return response()->json(['message' => 'Comment deleted'], 200);
+        }
+
+        return response()->json(['message' => 'Comment  not found'], 404);
+    }
 }

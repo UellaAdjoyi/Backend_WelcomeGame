@@ -35,7 +35,21 @@ return new class extends Migration
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('is_admin');
+            $table->string('role')->default('user'); // Ajoute une colonne role avec 'user' par défaut
+        });
     }
+
+    // public function up()
+    // {
+    //     Schema::table('users', function (Blueprint $table) {
+    //         $table->dropColumn('is_admin');
+    //         $table->string('role')->default('user'); // Ajoute une colonne role avec 'user' par défaut
+    //     });
+    // }
+
 
     /**
      * Reverse the migrations.

@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tasks', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id')->nullable()->change();
-        });
+        Schema::create('password_resets', function (Blueprint $table) {
+            $table->id();
+            $table->string('email_address')->index();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();        });
     }
 
     /**
@@ -21,8 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('tasks', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id')->nullable(false)->change();
-        });
+        Schema::dropIfExists('password_resets');
     }
 };

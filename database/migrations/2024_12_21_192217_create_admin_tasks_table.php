@@ -13,16 +13,13 @@ return new class extends Migration
     {
         Schema::create('tasks', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->string('guide_url')->nullable();
-            $table->string('registration_url')->nullable();
-            $table->json('pieces')->nullable();
+            $table->string('name');  // Le nom de la tâche
+            $table->text('description');  // Description de la tâche
+            $table->string('guideUrl')->nullable();  // URL du guide (si disponible)
+            $table->string('registrationUrl')->nullable();  // URL d'enregistrement (si disponible)
+            $table->json('pieces');
             $table->boolean('completed')->default(false);
-            $table->unsignedBigInteger('user_id');
             $table->timestamps();
-
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

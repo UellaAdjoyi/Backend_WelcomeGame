@@ -15,12 +15,19 @@ class Task extends Model
         'guide_url',
         'registration_url',
         'pieces',
-        'completed',
-        'user_id',
+
     ];
 
     protected $casts = [
         'pieces' => 'array',
-        'completed' => 'boolean',
     ];
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class)->withPivot('completed', 'updated_at')->withTimestamps();
+    }
+    public function userProgress()
+    {
+        return $this->hasMany(UserTaskProgress::class);
+    }
 }

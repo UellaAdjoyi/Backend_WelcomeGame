@@ -3,107 +3,98 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Models\UserTaskProgress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
-    // Récupérer toutes les tches de l'utilisateur connecté
     public function index()
     {
-        $tasks = Task::where('user_id', Auth::id())->get();
-        return response()->json($tasks);
+        return response()->json(Task::all());
     }
 
-    // Créer une nouvelle tâche
     public function store(Request $request)
     {
-        // Vérifier si l'utilisateur est authentifié
-        if (!Auth::check()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        // Validation des données de la tâche
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'description' => 'nullable|string',
-            'guide_url' => 'nullable|url',
-            'registration_url' => 'nullable|url',
-            'pieces' => 'nullable|array',
-        ]);
-
-        // Ajouter le user_id à la création de la tâche
-        $task = Task::create(array_merge($validated, ['user_id' => Auth::id()]));
-
+        $task = Task::create($request->all());
         return response()->json($task, 201);
     }
 
 
-    // Mettre à jour une tâche
-    public function update(Request $request, $id)
+    public function show($id)
     {
-        $task = Task::findOrFail($id);
-
-        // Vérification d'autorisation
-        if ($task->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        $task = Task::find($id);
+        if ($task) {
+            return response()->json($task);
         }
 
-        $validated = $request->validate([
-            'completed' => 'required|boolean',
-        ]);
-
-        $task->completed = $validated['completed'];
-        $task->save();
-
-        return response()->json($task);
+        return response()->json(['error' => 'Tâche non trouvée'], 404);
     }
 
-    // Supprimer une tâche
-    public function destroy(Task $task)
+    public function destroy($id)
     {
-        if ($task->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        $task = Task::find($id);
+        if ($task) {
+            $task->delete();
+            return response()->json(['message' => 'Tâche supprimée']);
         }
 
-        $task->delete();
-        return response()->json(['message' => 'Task deleted']);
+        return response()->json(['error' => 'Tâche non trouvée'], 404);
     }
 
-    // Récupérer les tâches complétées
-    public function CompletedTasks()
+    // Controller pour mettre à jour la progression d'une tâche pour un utilisateur
+
+    public function updateProgress(Request $request, $taskId)
     {
-        $tasks = Task::where('user_id', Auth::id())
-            ->where('completed', true)
-            ->get();
-        return response()->json($tasks);
+        // Vérifie si l'utilisateur est authentifié
+        $user = auth()->user();
+
+        // Trouve la tâche
+        $task = Task::find($taskId);
+        if (!$task) {
+            return response()->json(['error' => 'Task not found'], 404);
+        }
+
+        // Vérifie si l'utilisateur a déjà une progression pour cette tâche
+        $progress = $user->tasks()->where('task_id', $taskId)->first();
+
+        if (!$progress) {
+            // Si l'utilisateur n'a pas encore de progression, crée un nouvel enregistrement
+            $progress = new UserTaskProgress();
+            $progress->user_id = $user->id;
+            $progress->task_id = $taskId;
+        }
+
+        // Met à jour la progression
+        $progress->completed = $request->completed;  // 'completed' doit être envoyé dans la requête
+        $progress->save();
+
+        return response()->json(['status' => 'updated']);
     }
 
-    // Mettre à jour le statut d'une tâche
-    public function updateTaskStatus(Request $request, $id)
+
+    public function getCompletedTasks(Request $request)
     {
-        // Vérifier si l'utilisateur est authentifié
-        if (!Auth::check()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+        // Vérifiez si l'utilisateur est authentifié
+        $user = auth()->user();
+
+        // Si l'utilisateur n'est pas authentifié
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated user'], 401);
         }
 
-        // Récupérer la tâche par son ID
-        $task = Task::findOrFail($id);
+        // Récupérer les tâches complétées de l'utilisateur
+        $completedTasks = Task::whereHas('users', function ($query) use ($user) {
+            $query->where('user_id', $user->id)->where('completed', true);
+        })->get();
 
-        // Vérifier si la tâche appartient à l'utilisateur authentifié
-        if ($task->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        // Vérifiez si des tâches ont été trouvées
+        if ($completedTasks->isEmpty()) {
+            return response()->json(['error' => 'No completed task'], 404);
         }
 
-        // Validation de la demande de mise à jour
-        $validated = $request->validate([
-            'completed' => 'required|boolean',
-        ]);
-
-        // Mise à jour de l'état de la tâche
-        $task->completed = $validated['completed'];
-        $task->save();
-
-        return response()->json($task);
+        // Retourner les tâches complétées en réponse JSON
+        return response()->json($completedTasks);
     }
 }

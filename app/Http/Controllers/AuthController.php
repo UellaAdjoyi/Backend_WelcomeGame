@@ -13,6 +13,7 @@ use App\Mail\WelcomeMail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
@@ -73,6 +74,14 @@ class AuthController extends Controller
 
             ]);
 
+            // Clé de limitation des tentatives basée sur l'IP
+            $key = 'login-attempts:' . $request->ip();
+            // Vérifier si l'utilisateur a dépassé la limite de tentatives
+            if (RateLimiter::tooManyAttempts($key, 5)) {
+                return response()->json(['message' => 'Too many login attempts. Please try again later.'], 429);
+            }
+
+
             $user = User::where('username', $request->username)->first();
             if (!$user || !Hash::check($request->password, $user->password)) {
                 return [
@@ -81,6 +90,7 @@ class AuthController extends Controller
             }
 
             $token = $user->createToken('auth_token')->plainTextToken;
+            RateLimiter::clear($key);
 
             return [
                 'user' => $user,
@@ -149,20 +159,23 @@ class AuthController extends Controller
         ]);
 
         // Trouver l'entrée dans `password_resets`
-        $reset = DB::table('password_resets')->where('email', $request->email_address)->first();
+        $reset = DB::table('password_reset_tokens')->where('email', $request->email_address)->first();
 
-        if (!$reset || !Hash::check($request->token, $reset->token)) {
-            return response()->json(['message' => 'Invalid token or email.'], 400);
-        }
+
 
         // Mettre à jour le mot de passe de l'utilisateur
         $user = User::where('email_address', $request->email_address)->first();
+        if (!$user) {
+            return response()->json(['message' => "Aucun utilisateur trouvé pour cet email."], 404);
+        }
+
+        // Mettre à jour le mot de passe de l'utilisateur
         $user->password = Hash::make($request->password);
         $user->save();
 
         // Supprimer l'entrée dans `password_resets`
-        DB::table('password_resets')->where('email', $request->email_address)->delete();
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
-        return response()->json(['message' => 'Password has been reset.'], 200);
+        return response()->json(['message' => 'Your password has been reset.'], 200);
     }
 }

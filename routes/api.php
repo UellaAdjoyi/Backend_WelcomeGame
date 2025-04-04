@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 
 //Auth
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:3,1');
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 Route::middleware('auth:sanctum')->get('/user', [AuthController::class, 'user']);
 Route::post('/generate-reset-code', [AuthController::class, 'generateResetCode']);
@@ -40,10 +40,13 @@ Route::middleware('auth:sanctum')->get('/admin/events', [EventController::class,
 Route::get('/leaderboard', [LeaderboardController::class, 'index']);
 
 //Friends
-Route::get('/users', [UserController::class, 'getAllUsers']);
-// Route::post('/friends', [UserController::class, 'addFriend']);
-Route::middleware('auth:sanctum')->post('/friends', [UserController::class, 'addFriend']);
+Route::middleware('auth:sanctum')->get('/users', [UserController::class, 'getAllUsers']);
+Route::middleware('auth:sanctum')->post('/add-friend', [UserController::class, 'addFriend']);
 Route::middleware('auth:sanctum')->get('/friends', [UserController::class, 'getFriends']);
+Route::post('/send-invitation', [UserController::class, 'sendInvitation']);
+Route::post('/friends/accept', [UserController::class, 'acceptInvitation']);
+Route::get('/friends/ids', [UserController::class, 'getFriendIds']);
+
 
 //Forum
 Route::get('/posts', [ForumController::class, 'index']);
@@ -53,12 +56,16 @@ Route::get('/posts/{id}/comments', [ForumController::class, 'showComment']);
 Route::middleware('auth:sanctum')->post('/create-posts', [ForumController::class, 'createPosts']);
 Route::put('/update-posts/{id}', [ForumController::class, 'updatePosts']);
 Route::delete('/delete-posts/{id}', [ForumController::class, 'deletePosts']);
-
+Route::delete('/comments/{id}', [ForumController::class, 'destroy']);
 Route::middleware('auth:sanctum')->post('/posts/{id}/comments', [ForumController::class, 'addComment']);
 
 //Tasks
 Route::get('/tasks', [TaskController::class, 'index']);
-Route::post('/tasks', [TaskController::class, 'store']);
-Route::put('/tasks/{task}', [TaskController::class, 'update']);
-Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
-Route::get('/tasks/completed', [TaskController::class, 'completedTasks']);
+Route::middleware('auth:sanctum')->put('/tasks/{taskId}/progress', [TaskController::class, 'updateProgress']);
+Route::middleware('auth:sanctum')->get('/tasks/completed', [TaskController::class, 'getCompletedTasks']);
+
+
+//dashboard
+Route::middleware('auth:sanctum')->get('/user', [UserController::class, 'getUsers']);
+Route::post('/user/{id}/role', [UserController::class, 'updateRole']);
+Route::get('/stats', [UserController::class, 'getStats']);

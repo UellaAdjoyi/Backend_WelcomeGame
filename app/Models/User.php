@@ -28,6 +28,7 @@ class User extends Authenticatable implements CanResetPassword
         'email_address',
         'phone_number',
         'password',
+        'role',
         'is_admin'
     ];
     protected $guarded = []; // Assurez-vous que ce n'est pas un tableau qui bloque les champs
@@ -56,7 +57,12 @@ class User extends Authenticatable implements CanResetPassword
     }
     public function isAdmin()
     {
-        return $this->is_admin === 1;
+        return $this->role === 'admin';
+    }
+
+    public function isModerator()
+    {
+        return $this->role === 'moderator';
     }
 
     public function user_points()
@@ -77,5 +83,10 @@ class User extends Authenticatable implements CanResetPassword
     public function getEmailForPasswordReset()
     {
         return $this->email_address;
+    }
+
+    public function tasks()
+    {
+        return $this->belongsToMany(Task::class, 'task_user')->withPivot('completed');
     }
 }
