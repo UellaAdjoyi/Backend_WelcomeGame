@@ -21,14 +21,14 @@ class ProfileController extends Controller
             if (!$user) {
                 return response()->json(['error' => 'User not authenticated'], 401);
             }
-            $role = $user->is_admin == 1 ? 'admin' : 'user';
+            // $role = $user->is_admin == 1 ? 'admin' : 'user';
 
             // Retourne les informations de l'utilisateur
             return response()->json([
                 'last_name' => $user->last_name,
                 'first_name' => $user->first_name,
                 'phone_number' => $user->phone_number,
-                'role' => $role,
+                'role' => $user->role,
                 'email_address' => $user->email_address,
                 'username' => $user->username
             ]);
