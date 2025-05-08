@@ -25,11 +25,9 @@ class ProfileController extends Controller
 
             // Retourne les informations de l'utilisateur
             return response()->json([
-                'last_name' => $user->last_name,
-                'first_name' => $user->first_name,
-                'phone_number' => $user->phone_number,
+
                 'role' => $user->role,
-                'email_address' => $user->email_address,
+                'email' => $user->email,
                 'username' => $user->username
             ]);
         } catch (\Exception $e) {

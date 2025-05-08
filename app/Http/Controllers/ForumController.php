@@ -19,6 +19,9 @@ class ForumController extends Controller
     public function show($id)
     {
         $post = Post::with(['user', 'comments.user'])->findOrFail($id);
+        if ($post->image) {
+            $post->image_url = asset('storage/' . $post->image);
+        }
 
         return response()->json([
             'id' => $post->id,
@@ -63,6 +66,7 @@ class ForumController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048', // Validation d'image
         ]);
 
         $post = Post::create([
@@ -70,6 +74,14 @@ class ForumController extends Controller
             'content' => $request->input('content'),
             'user_id' => Auth::id(),
         ]);
+
+        // Si une image a été envoyée, on l'enregistre dans la table 'images'
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('images', 'public'); // Sauvegarde dans le dossier public/images
+            $post->images()->create([
+                'file_path' => $path,
+            ]);
+        }
 
         return response()->json($post, 201);
     }

@@ -1,17 +1,13 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>Verify Your Email</title>
+    <title>Votre compte a été créé</title>
 </head>
-
 <body>
-    <h1>Welcome to Our Application!</h1>
-    <p>Click the link below to verify your email address:</p>
-    <a href="http://172.23.36.43:8100/verify-email?token={{ $token }}">Verify Email</a>
-    <p>If you did not sign up for this account, please ignore this email.</p>
-    {{-- <a href="http:// 192.168.0.10:8100/verify-email?token={{ $token }}">Verify Email</a> --}}
-
+    <h1>Welcome to our Welcome Game app !</h1>
+    <p>Your account has been successfully created.</p>
+    <p><strong>Login : </strong>{{ $login }}</p>
+    <p><strong>Password : </strong>{{ $password }}</p>
+    <p>Please change your password after your first login.</p>
 </body>
-
 </html>

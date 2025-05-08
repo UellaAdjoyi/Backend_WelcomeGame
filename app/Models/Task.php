@@ -10,11 +10,10 @@ class Task extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
+        'title',
         'description',
-        'guide_url',
-        'registration_url',
-        'pieces',
+        'link',
+        'is_active'
 
     ];
 
@@ -22,12 +21,19 @@ class Task extends Model
         'pieces' => 'array',
     ];
 
+
     public function users()
     {
-        return $this->belongsToMany(User::class)->withPivot('completed', 'updated_at')->withTimestamps();
+        return $this->belongsToMany(User::class, 'user_task')
+            ->withPivot('completed')
+            ->withTimestamps();
     }
-    public function userProgress()
+
+    public function completedByUsers()
     {
-        return $this->hasMany(UserTaskProgress::class);
+        return $this->belongsToMany(User::class, 'user_task')
+            ->withPivot('completed')
+            ->wherePivot('completed', true);
     }
+
 }

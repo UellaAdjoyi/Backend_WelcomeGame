@@ -22,14 +22,12 @@ class User extends Authenticatable implements CanResetPassword
      * @var array<int, string>
      */
     protected $fillable = [
-        'first_name',
-        'last_name',
-        'username',
-        'email_address',
-        'phone_number',
+        'login',
+        'email',
         'password',
         'role',
-        'is_admin'
+        'must_change_password',
+        // 'is_admin'
     ];
     protected $guarded = []; // Assurez-vous que ce n'est pas un tableau qui bloque les champs
 
@@ -87,6 +85,21 @@ class User extends Authenticatable implements CanResetPassword
 
     public function tasks()
     {
-        return $this->belongsToMany(Task::class, 'task_user')->withPivot('completed');
+        return $this->belongsToMany(Task::class, 'user_task')->withPivot('completed');
     }
+
+    public function completedTasks()
+    {
+        return $this->belongsToMany(Task::class, 'user_task')
+            ->withPivot('completed')
+            ->withTimestamps();
+    }
+
+    public function countcompletedTasks()
+    {
+        return $this->belongsToMany(Task::class, 'user_task')
+            ->withPivot('completed')
+            ->wherePivot('completed', true);
+    }
+
 }

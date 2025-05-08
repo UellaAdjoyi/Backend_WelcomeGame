@@ -11,13 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tasks', function (Blueprint $table) {
+        Schema::create('user_task', function (Blueprint $table) {
             $table->id();
-            $table->string('name');  // Le nom de la tâche
-            $table->text('description');  // Description de la tâche
-            $table->string('guideUrl')->nullable();  // URL du guide (si disponible)
-            $table->string('registrationUrl')->nullable();  // URL d'enregistrement (si disponible)
-            $table->json('pieces');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('task_id')->constrained()->onDelete('cascade');
             $table->boolean('completed')->default(false);
             $table->timestamps();
         });
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tasks');
+        Schema::dropIfExists('user_task');
     }
 };

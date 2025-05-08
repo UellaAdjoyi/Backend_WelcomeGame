@@ -11,45 +11,22 @@ use Illuminate\Queue\SerializesModels;
 
 class WelcomeMail extends Mailable
 {
-    use Queueable, SerializesModels;
-    public $token;
-    /**
-     * Create a new message instance.
-     */
-    public function __construct($token)
-    {
-        $this->token = $token;
-    }
+    public $login;
+    public $password;
 
-    /**
-     * Get the message envelope.
-     */
-    public function envelope(): Envelope
+    public function __construct($login, $password)
     {
-        return new Envelope(
-            subject: 'Welcome Mail',
-        );
-    }
-
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.welcome_link',
-            with: [
-                'token' => $this->token,
-            ]
-        );
+        $this->login = $login;
+        $this->password = $password;
     }
 
     public function build()
     {
-        return $this->subject('Email Verification')
-            ->view('emails.welcome_link')
+        return $this->view('emails.welcome_link')
+            ->subject('Your  account has been created')
             ->with([
-                'token' => $this->token,
+                'login' => $this->login,
+                'password' => $this->password,
             ]);
     }
 

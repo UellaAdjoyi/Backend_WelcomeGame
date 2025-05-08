@@ -11,11 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('password_resets', function (Blueprint $table) {
-            $table->id();
-            $table->string('email_address')->index();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();        });
+        Schema::table('users', function (Blueprint $table) {
+            $table->boolean('must_change_password')->default(true);
+        });
     }
 
     /**
@@ -23,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('password_resets');
+        Schema::table('users', function (Blueprint $table) {
+            //
+        });
     }
 };
