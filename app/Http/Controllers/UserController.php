@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Mail\ResetPasswordMail;
 use App\Models\Event;
+use App\Models\ForumFeed;
+use App\Models\Task;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\User;
 use App\Models\Friend;
@@ -146,13 +148,13 @@ class UserController extends Controller
     public function getStats()
     {
         $totalUsers = User::count();
-        $totalPosts = Post::count();
-        $totalEvents = Event::count();
+        $totalPosts = ForumFeed::count();
+        $totalTasks = Task::count();
 
         return response()->json([
             'totalUsers' => $totalUsers,
             'totalPosts' => $totalPosts,
-            'totalEvents' => $totalEvents,
+            'totalTasks' => $totalTasks,
         ]);
     }
 
@@ -183,32 +185,6 @@ class UserController extends Controller
         return response()->json(['message' => 'Password reset and email sent.']);
     }
 
-/*    public function updateProfilePicture(Request $request)
-    {
-        $user = $request->user();
-
-        $validator = Validator::make($request->all(), [
-            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        // Supprimer l'ancienne photo si elle existe
-        if ($user->profile_picture) {
-            Storage::disk('public')->delete($user->profile_picture);
-        }
-
-        // Stocker la nouvelle photo
-        $path = $request->file('profile_picture')->store('profile_pictures', 'public');
-
-        $user->profile_picture = $path;
-        $user->save();
-
-        return response()->json(['message' => 'Profile updated successfully', 'profile_picture' => $path]);
-    }*/
-
     public function uploadProfilePicture(Request $request)
     {
         $user = auth()->user();
@@ -219,20 +195,19 @@ class UserController extends Controller
 
         $file = $request->file('file');
 
-        // Optionnel : valider le type de fichier
         $request->validate([
             'file' => 'image|max:2048', // max 2MB
         ]);
 
         try {
-            $filename = 'profile_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('public/profile_pictures', $filename);
+            if ($file) {
+                $user->profile_picture = $user->uploadProfile($file);  // Assurez-vous que la méthode uploadProfile existe dans le modèle User
+            }
 
-            // Met à jour l'utilisateur
-            $user->profile_picture = str_replace('public/', 'storage/', $path);
             $user->save();
 
-            return response()->json(['path' => asset($user->profile_picture)], 200);
+            return response()->json(['profile_picture' => asset($user->profile_picture)], 200);
+
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error uploading file: ' . $e->getMessage()], 500);
         }

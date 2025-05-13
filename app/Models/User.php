@@ -102,4 +102,16 @@ class User extends Authenticatable implements CanResetPassword
             ->wherePivot('completed', true);
     }
 
+    public function uploadProfile($file)
+    {
+        $filename = 'profile_' . $this->id . '_' . now()->format('Ymd\THis') . '.' . $file->getClientOriginalExtension();
+
+        $path = $file->storeAs('public/profile_pictures', $filename);
+
+        return 'storage/profile_pictures/' . $filename;
+    }
+
+
+
+
 }

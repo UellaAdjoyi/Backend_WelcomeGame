@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
+use App\Models\ForumArticle;
+use App\Models\ForumComment;
+use App\Models\ForumFeed;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -10,150 +13,163 @@ use Illuminate\Support\Facades\Log;
 
 class ForumController extends Controller
 {
-    public function index()
+    // Create a forum feed
+    public function createFeed(Request $request)
     {
-        $posts = Post::all(['id', 'title', 'created_at']);
-        return response()->json($posts);
+        $request->validate([
+            'title' => 'required|string',
+            'description' => 'required|string',
+        ]);
+
+        $feed = ForumFeed::create([
+            'title' => $request->title,
+            'description' => $request->description,
+        ]);
+
+        return response()->json($feed, 201);
+    }
+
+    // Add  article
+    public function addArticle(Request $request, $feedId)
+    {
+        $request->validate([
+            'title' => 'required|string',
+            'forum_content' => 'required|string',
+            'media' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mkv',
+        ]);
+
+        $feed = ForumFeed::findOrFail($feedId);
+        $article = new ForumArticle([
+            'title' => $request->title,
+            'forum_content' => $request->forum_content,
+            'user_id' => Auth::id(),
+            'forum_feed_id' => $feedId,
+
+        ]);
+
+        // Upload  medias
+        if ($request->hasFile('media')) {
+            $article->media = $article->uploadMedia($request->file('media'));
+        }
+        $article->save();
+
+        return response()->json($article, 201);
+    }
+
+    //delete article (moderator / admin)
+    public function deleteFeed($id)
+    {
+        $feed = ForumFeed::findOrFail($id);
+
+            $feed->delete();
+            return response()->json(null, 204);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        $feed = ForumFeed::findOrFail($id);
+        $feed->update([
+            'title' => $request->title,
+            'description' => $request->description,
+        ]);
+
+        return response()->json(['message' => 'Forum feed updated.', 'feed' => $feed]);
+    }
+
+
+    public function getAllFeeds()
+    {
+        $feeds = ForumFeed::with('articles')->get();
+        return response()->json($feeds, 200);
     }
 
     public function show($id)
     {
-        $post = Post::with(['user', 'comments.user'])->findOrFail($id);
-        if ($post->image) {
-            $post->image_url = asset('storage/' . $post->image);
+        // Get feed id
+        $forumFeed = ForumFeed::find($id);
+
+        if (!$forumFeed) {
+            return response()->json(['message' => 'Forum feed not found'], 404);
         }
 
-        return response()->json([
-            'id' => $post->id,
-            'title' => $post->title,
-            'content' => $post->content,
-            'author' => $post->user->username,
-            'created_at' => $post->created_at->format('Y-m-d H:i:s'),
-            'comments' => $post->comments->map(function ($comment) {
-                return [
-                    'id' => $comment->id,
-                    'content' => $comment->content,
-                    'author' => $comment->user->username,
-                    'created_at' => $comment->created_at->format('Y-m-d H:i:s'),
-                ];
-            }),
-        ]);
+        return response()->json($forumFeed);
     }
-
-
-    public function showComment($id)
+    public function getArticles($id)
     {
-        $post = Post::with(['user', 'comments.user'])->findOrFail($id);
-
-        return response()->json([
-            'id' => $post->id,
-            'title' => $post->title,
-            'content' => $post->content,
-            'author' => $post->user->username,
-            'created_at' => $post->created_at->format('Y-m-d H:i:s'),
-            'comments' => $post->comments->map(function ($comment) {
-                return [
-                    'id' => $comment->id,
-                    'content' => $comment->content,
-                    'author' => $comment->user->username,
-                    'created_at' => $comment->created_at->format('Y-m-d H:i:s'),
-                ];
-            }),
-        ]);
+        $feed = ForumFeed::with('articles.comments.user','articles.user')->findOrFail($id);
+        return response()->json($feed);
     }
-    public function createPosts(Request $request)
+
+
+    public function addComment($articleId, Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048', // Validation d'image
+            'article_content' => 'required|string|max:1000',
         ]);
 
-        $post = Post::create([
-            'title' => $request->input('title'),
-            'content' => $request->input('content'),
+        $article = ForumArticle::findOrFail($articleId);
+
+        $comment = ForumComment::create([
+            'forum_article_id' => $article->id,
             'user_id' => Auth::id(),
-        ]);
-
-        // Si une image a été envoyée, on l'enregistre dans la table 'images'
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('images', 'public'); // Sauvegarde dans le dossier public/images
-            $post->images()->create([
-                'file_path' => $path,
-            ]);
-        }
-
-        return response()->json($post, 201);
-    }
-
-
-
-    public function addComment(Request $request, $postId)
-    {
-        $request->validate([
-            'content' => 'required|string',
-        ]);
-        $post = Post::findOrFail($postId);
-
-        $comment = Comment::create([
-            'content' => $request->input('content'),
-            'user_id' => Auth::id(),
-            'post_id' => $postId,
+            'article_content' => $request->article_content,
         ]);
 
         return response()->json($comment, 201);
     }
 
-    public function updatePosts(Request $request, $id)
+    public function getComments($articleId)
     {
-        try {
-            $validatedData = $request->validate([
-                'title' => 'required|string|max:255',
-                'content' => 'required|string|max:255',
+        $userId = auth()->id();
 
-            ]);
-            $post = Post::find($id);
+        $comments = ForumComment::where('forum_article_id', $articleId)
+            ->with(['user', 'likes']) // charge aussi les likes
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($comment) use ($userId) {
+                return [
+                    'id' => $comment->id,
+                    'article_content' => $comment->article_content,
+                    'user' => $comment->user,
+                    'likes' => $comment->likes->count(),
+                    'likedByUser' => $comment->likes->contains('user_id', $userId),
+                    'created_at' => $comment->created_at,
+                ];
+            });
 
-            if (!$post) {
-                return response()->json(['error' => 'Post not found'], 404);
-            }
-            $post->title = $validatedData['title'];
-            $post->content = $validatedData['content'];
-            $post->save();
-
-            return response()->json([
-                'message' => 'Post updated successfully.',
-                'post' => $post,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error updating profile: ' . $e->getMessage());
-            return response()->json(['error' => 'Could not update profile.'], 500);
-        }
+        return response()->json($comments);
     }
 
-    public function deletePosts($id)
+    public function updateArticle(Request $request, $id)
     {
-        try {
-            $post = Post::findOrFail($id);
+        $article = ForumArticle::findOrFail($id);
+        $user = auth()->user();
 
-            $post->delete();
-
-            return response()->json(['message' => 'Post deleted successfully.'], 200);
-        } catch (\Exception $e) {
-            Log::error('Error deleting event: ' . $e->getMessage());
-            return response()->json(['error' => 'Error deleting post.'], 500);
-        }
-    }
-
-    public function destroy($id)
-    {
-        $comment = Comment::find($id);
-
-        if ($comment) {
-            $comment->delete();
-            return response()->json(['message' => 'Comment deleted'], 200);
+        if ($article->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        return response()->json(['message' => 'Comment  not found'], 404);
+        $article->update($request->only(['title', 'forum_content']));
+        return response()->json(['message' => 'Article updated']);
     }
+
+    public function deleteArticle($id)
+    {
+        $article = ForumArticle::findOrFail($id);
+        $user = auth()->user();
+
+        if ($article->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $article->delete();
+        return response()->json(['message' => 'Article deleted']);
+    }
+
+
 }

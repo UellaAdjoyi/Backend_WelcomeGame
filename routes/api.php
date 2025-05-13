@@ -1,16 +1,14 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Auth\CommentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\ForumController;
 use App\Http\Controllers\LeaderboardController;
-use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
 
 //Auth-Users
@@ -54,15 +52,27 @@ Route::get('/friends/ids', [UserController::class, 'getFriendIds']);
 
 
 //Forum
-Route::get('/posts', [ForumController::class, 'index']);
-Route::post('/posts', [ForumController::class, 'store'])->middleware('auth:sanctum');;
-Route::get('/posts/{id}', [ForumController::class, 'show']);
-Route::get('/posts/{id}/comments', [ForumController::class, 'showComment']);
-Route::middleware('auth:sanctum')->post('/create-posts', [ForumController::class, 'createPosts']);
-Route::put('/update-posts/{id}', [ForumController::class, 'updatePosts']);
-Route::delete('/delete-posts/{id}', [ForumController::class, 'deletePosts']);
-Route::delete('/comments/{id}', [ForumController::class, 'destroy']);
-Route::middleware('auth:sanctum')->post('/posts/{id}/comments', [ForumController::class, 'addComment']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/forum/feeds-create', [ForumController::class, 'createFeed']);
+    Route::post('/forum/feeds/{feedId}/articles', [ForumController::class, 'addArticle']);
+    Route::delete('/forum/feed/{feedId}', [ForumController::class, 'deleteFeed']);
+    Route::delete('/forum-articles/{id}', [ForumController::class, 'deleteArticle']);
+    Route::get('/forum/feeds', [ForumController::class, 'getAllFeeds']);
+    Route::get('/forum-feeds/{id}', [ForumController::class, 'show']);
+    Route::get('/forum-feeds/{id}/articles', [ForumController::class, 'getArticles']);
+
+});
+Route::middleware('auth:sanctum')->put('/forum-feeds/{id}', [ForumController::class, 'update']);
+Route::middleware('auth:sanctum')->put('/forum-articles/{id}', [ForumController::class, 'updateArticle']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/articles/{articleId}/comments', [ForumController::class, 'addComment']);
+    Route::get('/articles/{articleId}/comments', [ForumController::class, 'getComments']);
+
+});
+Route::middleware('auth:sanctum')->post('/forum-comments/{id}/like', [CommentController::class, 'likeComment']);
+
+
 
 //Tasks
 Route::middleware('auth:sanctum')->get('/tasks', [TaskController::class, 'index']);
@@ -87,9 +97,9 @@ Route::middleware('auth:sanctum')->get('/admin/task-stats', [TaskController::cla
 
 
 //Missions
-Route::middleware('auth:sanctum')->group(function () {
+/*Route::middleware('auth:sanctum')->group(function () {
     Route::get('/missions', [MissionController::class, 'index']);
     Route::post('/missions/{mission}/participer', [ParticipationController::class, 'store']);
     Route::get('/admin/participations', [ParticipationController::class, 'index']);
     Route::post('/admin/participations/{id}/valider', [ParticipationController::class, 'valider']);
-});
+});*/
