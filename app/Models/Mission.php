@@ -6,10 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Mission extends Model
 {
-    protected $fillable = [];
-
-    public function participations()
-    {
-        return $this->hasMany(Participation::class);
+    protected $fillable = ['title', 'description'];
+    public function submissions() {
+        return $this->hasMany(MissionSubmission::class);
     }
 }

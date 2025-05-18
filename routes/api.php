@@ -6,6 +6,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\ForumController;
 use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\MissionController;
+use App\Http\Controllers\MissionSubmissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UserController;
@@ -72,7 +74,10 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::middleware('auth:sanctum')->post('/forum-comments/{id}/like', [CommentController::class, 'likeComment']);
 
-
+Route::middleware('auth:sanctum')->group(function () {
+    Route::put('/comments/{comment}', [CommentController::class, 'updateComment']);
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+});
 
 //Tasks
 Route::middleware('auth:sanctum')->get('/tasks', [TaskController::class, 'index']);
@@ -93,13 +98,19 @@ Route::get('/stats', [UserController::class, 'getStats']);
 Route::post('/users', [AdminController::class, 'createUser']);
 Route::middleware('auth:sanctum')->post('/tasks/create', [TaskController::class, 'store']);
 Route::middleware('auth:sanctum')->get('/admin/task-stats', [TaskController::class, 'taskStats']);
+Route::delete('/deleteUsers/{id}', [AdminController::class, 'destroy']);
 
 
 
 //Missions
-/*Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('/missions', [MissionController::class, 'index']);
-    Route::post('/missions/{mission}/participer', [ParticipationController::class, 'store']);
-    Route::get('/admin/participations', [ParticipationController::class, 'index']);
-    Route::post('/admin/participations/{id}/valider', [ParticipationController::class, 'valider']);
-});*/
+    Route::post('/missions', [MissionController::class, 'store']);
+
+    Route::post('/missions/submit', [MissionSubmissionController::class, 'submit']); // user
+    Route::get('/missions/pending', [MissionSubmissionController::class, 'pending']); // admin/modo
+    Route::put('/missions/validate/{id}', [MissionSubmissionController::class, 'validateSubmission']); // admin/modo
+});
+
+Route::middleware('auth:sanctum')->get('/my-submissions', [MissionSubmissionController::class, 'mySubmissions']);
+Route::get('/leaderboard', [LeaderboardController::class, 'index']);

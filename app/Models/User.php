@@ -106,10 +106,13 @@ class User extends Authenticatable implements CanResetPassword
     {
         $filename = 'profile_' . $this->id . '_' . now()->format('Ymd\THis') . '.' . $file->getClientOriginalExtension();
 
-        $path = $file->storeAs('public/profile_pictures', $filename);
+        // Stocke dans storage/app/public/profile_pictures
+        $file->storeAs('public/profile_pictures', $filename);
 
+        // Retourne le chemin public utilisable depuis Angular
         return 'storage/profile_pictures/' . $filename;
     }
+
 
 
 

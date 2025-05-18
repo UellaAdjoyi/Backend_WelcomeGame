@@ -193,20 +193,21 @@ class UserController extends Controller
             return response()->json(['error' => 'No file uploaded'], 400);
         }
 
-        $file = $request->file('file');
-
         $request->validate([
-            'file' => 'image|max:2048', // max 2MB
+            'file' => 'image|max:2048', // Max 2 Mo
         ]);
 
-        try {
-            if ($file) {
-                $user->profile_picture = $user->uploadProfile($file);  // Assurez-vous que la méthode uploadProfile existe dans le modèle User
-            }
+        $file = $request->file('file');
 
+        try {
+            // Appel de la méthode upload dans le modèle
+            $user->profile_picture = $user->uploadProfile($file);
             $user->save();
 
-            return response()->json(['profile_picture' => asset($user->profile_picture)], 200);
+            // On retourne seulement le chemin relatif, Angular ajoutera le host
+            return response()->json([
+                'profile_picture' => $user->profile_picture
+            ], 200);
 
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error uploading file: ' . $e->getMessage()], 500);
