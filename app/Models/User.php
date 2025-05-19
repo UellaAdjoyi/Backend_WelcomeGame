@@ -27,9 +27,8 @@ class User extends Authenticatable implements CanResetPassword
         'password',
         'role',
         'must_change_password',
-        // 'is_admin'
     ];
-    protected $guarded = []; // Assurez-vous que ce n'est pas un tableau qui bloque les champs
+    protected $guarded = [];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -102,16 +101,7 @@ class User extends Authenticatable implements CanResetPassword
             ->wherePivot('completed', true);
     }
 
-    public function uploadProfile($file)
-    {
-        $filename = 'profile_' . $this->id . '_' . now()->format('Ymd\THis') . '.' . $file->getClientOriginalExtension();
 
-        // Stocke dans storage/app/public/profile_pictures
-        $file->storeAs('public/profile_pictures', $filename);
-
-        // Retourne le chemin public utilisable depuis Angular
-        return 'storage/profile_pictures/' . $filename;
-    }
 
 
 

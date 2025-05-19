@@ -26,9 +26,9 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 
 //Users
-Route::middleware('auth:sanctum')->get('/profile', [ProfileController::class, 'getProfile']);
-
-Route::middleware('auth:sanctum')->post('/user/upload-profile-picture', [UserController::class, 'uploadProfilePicture']);
+Route::middleware('auth:sanctum')->get('/profile', [UserController::class, 'getProfile']);
+Route::middleware('auth:sanctum')->get('/points', [UserController::class, 'getUserPoints']);
+Route::middleware('auth:sanctum')->post('user/upload-profile-picture', [UserController::class, 'uploadProfilePicture']);
 
 
 //Events
@@ -37,7 +37,6 @@ Route::get('/nearby-events', [EventController::class, 'getNearbyEvents']);
 Route::put('/events/{id}', [EventController::class, 'updateEvent']);
 Route::delete('/events/{id}', [EventController::class, 'deleteEvent']);
 Route::middleware('auth:sanctum')->post('/events/{eventId}/join', [EventController::class, 'joinEvent']);
-Route::middleware('auth:sanctum')->get('/points', [EventController::class, 'getUserPoints']);
 Route::middleware('auth:sanctum')->get('/admin/events', [EventController::class, 'index']);
 
 

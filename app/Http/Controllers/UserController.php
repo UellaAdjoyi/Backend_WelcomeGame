@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\ResetPasswordMail;
 use App\Models\Event;
 use App\Models\ForumFeed;
+use App\Models\MissionSubmission;
 use App\Models\Task;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\User;
@@ -21,10 +22,10 @@ use Illuminate\Support\Str;
 class UserController extends Controller
 {
 
-    //Récupération des utilisateurs et de leur rôle sur le dashboard
+    //Getting users
     public function getUsers()
     {
-        $user = Auth::user(); // Utilisateur actuel
+        $user = Auth::user();
 
         if (!$user) {
             return response()->json(['message' => 'User not authenticated'], 401);
@@ -42,7 +43,6 @@ class UserController extends Controller
             return response()->json(['message' => 'User not authenticated'], 401);
         }
 
-        // Récupérer les IDs des amis
         $friendIds = $user->friends()->pluck('friend_id')->toArray();
 
         // Ajouter l'utilisateur actuel dans les amis pour s'assurer qu'il est exclu de la liste des utilisateurs
@@ -132,7 +132,7 @@ class UserController extends Controller
     {
         $user = User::find($id); // Vérification
         if (!$user) {
-            return response()->json(['message' => 'Utilisateur introuvable'], 404);
+            return response()->json(['message' => 'User not found'], 404);
         }
 
         $validatedData = $request->validate([
@@ -142,7 +142,7 @@ class UserController extends Controller
         $user->role = $validatedData['role'];
         $user->save();
 
-        return response()->json(['message' => 'Rôle mis à jour avec succès']);
+        return response()->json(['message' => 'Role updated successfully']);
     }
 
     public function getStats()
@@ -187,30 +187,54 @@ class UserController extends Controller
 
     public function uploadProfilePicture(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
 
-        if (!$request->hasFile('file')) {
-            return response()->json(['error' => 'No file uploaded'], 400);
-        }
-
+        // file validation
         $request->validate([
-            'file' => 'image|max:2048', // Max 2 Mo
+            'file' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $file = $request->file('file');
 
-        try {
-            // Appel de la méthode upload dans le modèle
-            $user->profile_picture = $user->uploadProfile($file);
-            $user->save();
+        // unique filename
+        $filename = 'profile_' . $user->id . '_' . now()->format('YmdHis') . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
 
-            // On retourne seulement le chemin relatif, Angular ajoutera le host
-            return response()->json([
-                'profile_picture' => $user->profile_picture
-            ], 200);
+        // storage
+        $path = $file->storeAs('profile_pictures', $filename, 'public');
 
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Error uploading file: ' . $e->getMessage()], 500);
+        // update user
+        $user->profile_picture = $path;
+        $user->save();
+
+        return response()->json([
+            'profile_picture' => Storage::url($path),
+        ]);
+    }
+
+    public function getProfile()
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not authenticated'], 401);
         }
+
+        return response()->json([
+            'login' => $user->login,
+            'email' => $user->email,
+            'role'=>$user->role,
+            'is_active'=>$user->is_active,
+            'profile_picture'=>$user->profile_picture,
+        ]);
+}
+
+    public function getUserPoints()
+    {
+        $user = Auth::user();
+
+        $totalPoints = MissionSubmission::where('user_id', $user->id)
+            ->sum('points_awarded');
+
+        return response()->json(['points' => $totalPoints]);
     }
 }
