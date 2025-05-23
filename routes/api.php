@@ -113,3 +113,4 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::middleware('auth:sanctum')->get('/my-submissions', [MissionSubmissionController::class, 'mySubmissions']);
 Route::get('/leaderboard', [LeaderboardController::class, 'index']);
+Route::middleware('auth:sanctum')->delete('/tasks/{id}', [TaskController::class, 'destroy']);
