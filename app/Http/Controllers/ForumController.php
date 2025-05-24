@@ -99,6 +99,7 @@ class ForumController extends Controller
 
         return response()->json($forumFeed);
     }
+
     public function getArticles($id)
     {
         $feed = ForumFeed::with('articles.comments.user','articles.user')->findOrFail($id);

@@ -75,7 +75,7 @@ Route::middleware('auth:sanctum')->post('/forum-comments/{id}/like', [CommentCon
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::put('/comments/{comment}', [CommentController::class, 'updateComment']);
-    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroyComment']);
 });
 
 //Tasks

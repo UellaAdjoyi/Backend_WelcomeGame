@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Comment;
 use App\Models\CommentLike;
 use App\Models\ForumComment;
 use Illuminate\Http\Request;
@@ -44,4 +45,33 @@ class CommentController extends Controller
         return response()->json(['likes' => ForumComment::find($id)->likes()->count()]);
     }
 
+    public function updateComment(Request $request, ForumComment $comment)
+    {
+        $user = Auth::user();
+
+        if ($comment->user_id !== $user->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'article_content' => 'required|string|max:1000',
+        ]);
+
+        $comment->article_content = $validated['article_content'];
+        $comment->save();
+
+        return response()->json(['message' => 'Comment updated successfully']);
+    }
+    public function destroyComment(ForumComment $comment)
+    {
+        $user = Auth::user();
+
+        if ($comment->user_id !== $user->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $comment->delete();
+
+        return response()->json(['message' => 'Comment deleted successfully']);
+    }
 }
